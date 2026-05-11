@@ -1,4 +1,4 @@
-# Day 5: Prompt builder + LLM call will go here
+# 5 : Prompt builder + LLM call will go here
 # Uses Groq API (free) running Llama 3.3 70B
 # Get your free key at: https://console.groq.com
 

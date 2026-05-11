@@ -1,5 +1,5 @@
 """
-retriever.py — Day 3
+retriever.py — 
 
 Similarity search against ChromaDB.
 Given a user question, find the top-K most relevant chunks

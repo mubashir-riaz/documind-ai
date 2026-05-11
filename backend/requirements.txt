@@ -1,0 +1,29 @@
+# Web framework
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+
+# File upload support
+python-multipart==0.0.9
+
+# Document parsing — multi-format support (Day 2)
+pymupdf==1.24.3        # PDF
+python-docx==1.1.2     # Word (.docx)
+python-pptx==0.6.23    # PowerPoint (.pptx)
+openpyxl==3.1.4        # Excel (.xlsx)
+# TXT and MD use Python built-in open() — no library needed
+
+# Chunking (Day 3)
+langchain==0.2.1
+langchain-text-splitters==0.2.1
+
+# FREE local embeddings — no API key needed (Day 3)
+sentence-transformers==3.0.0
+
+# Vector database (Day 3)
+chromadb==0.5.0
+
+# FREE LLM via Groq — Llama 3.3 70B (Day 5)
+groq==0.9.0
+
+# Environment variables
+python-dotenv==1.0.1

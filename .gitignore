@@ -1,0 +1,40 @@
+# Python
+
+**pycache**/
+_.pyc
+_.pyo
+venv/
+.venv/
+\*.egg-info/
+dist/
+build/
+
+# Secrets — NEVER commit these
+
+.env
+backend/.env
+
+# ChromaDB local storage
+
+backend/chroma_db/
+
+# Uploaded PDFs (processed locally, not versioned)
+
+backend/uploads/
+
+# Node / React
+
+node_modules/
+frontend/dist/
+frontend/.env
+
+# OS
+
+.DS_Store
+Thumbs.db
+
+# IDE
+
+.vscode/
+.idea/
+\*.swp

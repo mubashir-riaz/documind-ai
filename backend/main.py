@@ -124,7 +124,8 @@ async def upload_document(file: UploadFile = File(...)):
         "chunks_stored": store_result["chunks_stored"],
         "embedding_dim": store_result["embedding_dim"],
         "model":         store_result["model"],
+        "full_text":     text,              # ← ADD THIS LINE
         "text_preview":  text[:500] + ("..." if len(text) > 500 else ""),
-        "status":        "ready",           # doc is ready to be queried
+        "status":        "extracted",       # ← CHANGE from "ready" to "extracted"
         "message":       f"Document ingested into {store_result['chunks_stored']} chunks. Ready for /ask!"
     }

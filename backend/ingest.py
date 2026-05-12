@@ -1,9 +1,8 @@
 # import os
 from pathlib import Path
-import chromadb as _chromadb
 
-# ── text extraction (all formats) ──────────────────────────────────────
-# ── chunking + embeddings will be added below  ─────────────────────────
+# ── Day 2: text extraction (all formats) ──────────────────────────────────────
+# ── Day 3: chunking + embeddings will be added below  ─────────────────────────
 
 SUPPORTED_FORMATS = [".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md"]
 
@@ -200,7 +199,7 @@ def chunk_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> lis
 # DAY 3 — EMBEDDINGS + VECTOR STORE
 # ─────────────────────────────────────────────────────────────────────────────
 
-
+import chromadb as _chromadb
 
 _chroma_client = _chromadb.PersistentClient(path="./chroma_db")
 _collection = _chroma_client.get_or_create_collection(

@@ -2,8 +2,8 @@
 from pathlib import Path
 import chromadb as _chromadb
 
-# ── Day 2: text extraction (all formats) ──────────────────────────────────────
-# ── Day 3: chunking + embeddings will be added below  ─────────────────────────
+# ── text extraction (all formats) ──────────────────────────────────────
+# ── chunking + embeddings will be added below  ─────────────────────────
 
 SUPPORTED_FORMATS = [".pdf", ".docx", ".pptx", ".xlsx", ".txt", ".md"]
 

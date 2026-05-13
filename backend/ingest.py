@@ -257,4 +257,3 @@ def embed_and_store(chunks: list[str], doc_id: str) -> dict:
         "embedding_dim": len(embeddings[0]),
         "model":         "all-MiniLM-L6-v2",
     }
-

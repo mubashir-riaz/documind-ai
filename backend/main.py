@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from ingest import extract_text, chunk_text, embed_and_store, SUPPORTED_FORMATS
 from retriever import search, list_documents, delete_document, collection_stats
+from llm import answer_question
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -15,7 +16,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 app = FastAPI(
     title="DocuMind AI",
     description="RAG-powered multi-format document Q&A",
-    version="0.4.0"
+    version="0.5.0"
 )
 
 app.add_middleware(
@@ -50,7 +51,7 @@ def health_check():
 def root():
     return {
         "project":           "DocuMind AI",
-        "version":           "0.4.0",
+        "version":           "0.5.0",
         "supported_formats": SUPPORTED_FORMATS,
         "docs":              "/docs",
     }
@@ -222,13 +223,84 @@ def get_stats():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# ASK — placeholder for Day 5
+# ASK — full RAG pipeline
 # ─────────────────────────────────────────────────────────────────────────────
 
+class AskRequest(BaseModel):
+    question: str
+    doc_id:   Optional[str] = None   # optional — search all docs or just one
+    top_k:    int = 5                # how many chunks to retrieve
+
+
 @app.post("/ask")
-def ask_question(req: SearchRequest):
-    """LLM-powered Q&A — coming next."""
-    raise HTTPException(
-        status_code=501,
-        detail="Not implemented yet. Coming soon!"
-    )
+def ask(req: AskRequest):
+    """
+    Full RAG pipeline — the heart of DocuMind AI.
+
+    Steps:
+      1. Validate the question
+      2. Search ChromaDB for the most relevant chunks
+      3. Build a grounded prompt with those chunks
+      4. Send to Llama 3.3 70B via Groq
+      5. Return the answer + sources used
+
+    Use doc_id to ask questions about one specific document.
+    Leave doc_id empty to search across all uploaded documents.
+    """
+
+    # Validate
+    if not req.question or not req.question.strip():
+        raise HTTPException(status_code=400, detail="Question cannot be empty.")
+    if req.top_k < 1 or req.top_k > 20:
+        raise HTTPException(status_code=400, detail="top_k must be between 1 and 20.")
+
+    # Step 1 — Retrieve relevant chunks
+    try:
+        chunks = search(
+            query  = req.question,
+            top_k  = req.top_k,
+            doc_id = req.doc_id,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Retrieval failed: {e}")
+
+    # No documents uploaded yet
+    if not chunks:
+        raise HTTPException(
+            status_code=404,
+            detail="No documents found. Please upload a document first using /upload."
+        )
+
+    # Step 2 — Extract just the text from each chunk result
+    chunk_texts = [c["text"] for c in chunks]
+
+    # Step 3 — Build prompt + call LLM
+    try:
+        result = answer_question(
+            question       = req.question,
+            context_chunks = chunk_texts,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM call failed: {e}")
+
+    # Step 4 — Return answer + the sources used
+    return {
+        "question":      result["question"],
+        "answer":        result["answer"],
+        "model":         result["model"],
+        "chunks_used":   result["chunks_used"],
+        "context_chars": result["context_chars"],
+        "doc_id":        req.doc_id,
+        "sources": [
+            {
+                "chunk_index": c["chunk_index"],
+                "score":       c["score"],
+                "preview":     c["text"][:200] + ("..." if len(c["text"]) > 200 else ""),
+            }
+            for c in chunks
+        ],
+    }

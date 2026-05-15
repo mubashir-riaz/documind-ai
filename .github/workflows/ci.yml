@@ -34,5 +34,5 @@ jobs:
           CHROMADB_TELEMETRY: "off" # ← Cleaner logs
         run: |
           uvicorn main:app --host 127.0.0.1 --port 8000 &
-          sleep 15  (server needs time)
+          sleep 15 
           curl --retry 5 --retry-delay 2 --fail http://127.0.0.1:8000/health

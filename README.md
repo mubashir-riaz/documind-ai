@@ -39,15 +39,15 @@ User Query → Embed Query → Similarity Search → Prompt Builder → LLM → 
 
 ## Progress
 
-| Feature                          | Status       |
-| -------------------------------- | ------------ |
-| Project setup & FastAPI          | ✅ Done      |
-| Multi-format document extraction | 🔜 Pending g |
-| Chunking + embeddings + ChromaDB | 🔜 Pending   |
-| Search / retrieval endpoint      | 🔜 Pending   |
-| LLM response via Groq            | 🔜 Pending   |
-| React frontend                   | 🔜 Pending   |
-| Deploy to Railway + Vercel       | 🔜 Pending   |
+| Feature                          | Status     |
+| -------------------------------- | ---------- |
+| Project setup & FastAPI          | ✅ Done    |
+| Multi-format document extraction | ✅ Done    |
+| Chunking + embeddings + ChromaDB | ✅ Done    |
+| Search / retrieval endpoint      | ✅ Done    |
+| LLM response via Groq            | ✅ Done    |
+| React frontend                   | 🔜 Pending |
+| Deploy to Railway + Vercel       | 🔜 Pending |
 
 ## Local Setup
 
@@ -62,7 +62,7 @@ User Query → Embed Query → Similarity Search → Prompt Builder → LLM → 
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env

@@ -31,7 +31,8 @@ jobs:
         working-directory: backend
         env:
           GROQ_API_KEY: dummy_key_for_ci
+          CHROMADB_TELEMETRY: "off" # ← Cleaner logs
         run: |
-          uvicorn main:app &
-          sleep 3
-          curl -f http://localhost:8000/health
+          uvicorn main:app --host 127.0.0.1 --port 8000 &
+          sleep 15  (server needs time)
+          curl --retry 5 --retry-delay 2 --fail http://127.0.0.1:8000/health

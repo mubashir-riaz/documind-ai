@@ -25,6 +25,7 @@ chromadb==0.5.0
 # FREE LLM via Groq — Llama 3.3 70B (Day 5)
 groq==0.9.0
 httpx==0.24.1
+requests==2.31.0        
 
 # Environment variables
 python-dotenv==1.0.1

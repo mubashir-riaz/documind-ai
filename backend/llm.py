@@ -7,6 +7,7 @@ and returns the grounded answer.
 """
 
 import os
+import requests 
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -84,16 +85,6 @@ def build_prompt(question: str, context_chunks: list[str]) -> list[dict]:
 def ask_llm(messages: list[dict]) -> str:
     """
     Send messages to Llama 3.3 70B via Groq and return the answer string.
-
-    Args:
-        messages: list of message dicts from build_prompt()
-
-    Returns:
-        The LLM answer as a plain string
-
-    Raises:
-        ValueError:   if GROQ_API_KEY is missing from .env
-        RuntimeError: if the Groq API call fails
     """
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
@@ -103,16 +94,22 @@ def ask_llm(messages: list[dict]) -> str:
             "Get a free key at https://console.groq.com"
         )
 
-    try:
-        client   = Groq(api_key=api_key)
-        response = client.chat.completions.create(
-            model       = MODEL,
-            messages    = messages,
-            max_tokens  = MAX_TOKENS,
-            temperature = TEMPERATURE,
-        )
-        return response.choices[0].message.content.strip()
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": MODEL,
+        "messages": messages,
+        "max_tokens": MAX_TOKENS,
+        "temperature": TEMPERATURE
+    }
 
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
         raise RuntimeError(f"Groq API call failed: {e}")
 

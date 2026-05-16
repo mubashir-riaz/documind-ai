@@ -1,40 +1,32 @@
-# Python
-
-**pycache**/
-_.pyc
-_.pyo
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
 venv/
 .venv/
-\*.egg-info/
+*.egg-info/
 dist/
 build/
 
-# Secrets — NEVER commit these
-
+# ── Secrets — NEVER commit these ─────────────────────────────────────────────
 .env
 backend/.env
-
-# ChromaDB local storage
-
-backend/chroma_db/
-
-# Uploaded PDFs (processed locally, not versioned)
-
-backend/uploads/
-
-# Node / React
-
-node_modules/
-frontend/dist/
 frontend/.env
 
-# OS
+# ── Data — generated at runtime, not versioned ───────────────────────────────
+backend/chroma_db/
+backend/chroma_db_test/
+backend/uploads/
 
+# ── Node / React ──────────────────────────────────────────────────────────────
+node_modules/
+frontend/dist/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# IDE
-
+# ── IDE ───────────────────────────────────────────────────────────────────────
 .vscode/
 .idea/
-\*.swp
+*.swp

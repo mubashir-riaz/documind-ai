@@ -200,8 +200,6 @@ def chunk_text(text: str, chunk_size: int = 500, chunk_overlap: int = 50) -> lis
 # DAY 3 — EMBEDDINGS + VECTOR STORE
 # ─────────────────────────────────────────────────────────────────────────────
 
-
-
 _chroma_client = _chromadb.PersistentClient(path="./chroma_db")
 _collection = _chroma_client.get_or_create_collection(
     name="documents",
@@ -259,4 +257,3 @@ def embed_and_store(chunks: list[str], doc_id: str) -> dict:
         "embedding_dim": len(embeddings[0]),
         "model":         "all-MiniLM-L6-v2",
     }
-

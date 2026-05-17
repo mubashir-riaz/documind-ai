@@ -1,164 +1,117 @@
-# DocuMind AI 🧠📄
+# DocuMind AI 🧠
 
-A RAG (Retrieval-Augmented Generation) app.
-Upload **any document** → ask questions → get answers grounded in your content.
+> Upload any document. Ask any question. Get answers grounded in your content.
 
-**Live demo:** `https://documind-ai.vercel.app` _(replace with your URL after deploy)_
+DocuMind AI is a full-stack RAG (Retrieval-Augmented Generation) application that lets you chat with your documents. It extracts, chunks, and embeds your files into a local vector database, then uses a large language model to answer questions using only what's in your documents — no hallucinations, no guessing.
 
-## Supported Document Formats
+**Live:** `https://your-deployment-url.railway.app`
 
-| Format             | Library     |
-| ------------------ | ----------- |
-| PDF (.pdf)         | PyMuPDF     |
-| Word (.docx)       | python-docx |
-| PowerPoint (.pptx) | python-pptx |
-| Excel (.xlsx)      | openpyxl    |
-| Text (.txt)        | built-in    |
-| Markdown (.md)     | built-in    |
+---
 
-## Architecture
+## How It Works
 
 ```
 Document Upload → Text Extraction → Chunking → Embeddings → ChromaDB
-                                                                 ↓
-User Query → Embed Query → Similarity Search → Prompt Builder → LLM → Answer
+                                                                ↓
+   User Query  → Embed Query    → Similarity Search → LLM Prompt → Answer
 ```
+
+Every answer comes with source chunks and relevance scores so you can verify exactly where the information came from.
+
+---
+
+## Supported Formats
+
+| Format             | Parser      |
+| ------------------ | ----------- |
+| PDF                | PyMuPDF     |
+| Word (.docx)       | python-docx |
+| PowerPoint (.pptx) | python-pptx |
+| Excel (.xlsx)      | openpyxl    |
+| Text / Markdown    | built-in    |
+
+---
 
 ## Tech Stack
 
-| Layer           | Technology                                  | Cost      |
-| --------------- | ------------------------------------------- | --------- |
-| Backend         | FastAPI (Python 3.11)                       | Free      |
-| Frontend        | React + Vite                                | Free      |
-| Doc Parsing     | PyMuPDF, python-docx, python-pptx, openpyxl | Free      |
-| Chunking        | LangChain TextSplitter                      | Free      |
-| Embeddings      | sentence-transformers (runs locally)        | Free      |
-| Vector DB       | ChromaDB                                    | Free      |
-| LLM             | Llama 3.3 70B via Groq API                  | Free      |
-| Backend Deploy  | Railway                                     | Free tier |
-| Frontend Deploy | Vercel                                      | Free tier |
+| Layer      | Technology                                       |
+| ---------- | ------------------------------------------------ |
+| Backend    | FastAPI · Python 3.11                            |
+| Frontend   | React · Vite                                     |
+| Embeddings | sentence-transformers `all-MiniLM-L6-v2` (local) |
+| Vector DB  | ChromaDB (local, persistent)                     |
+| LLM        | Llama 3.3 70B via Groq API                       |
+| Chunking   | LangChain RecursiveCharacterTextSplitter         |
+| Deploy     | Railway                                          |
 
-> **100% free stack.** Get your Groq API key at [console.groq.com](https://console.groq.com) — no credit card needed.
+> 100% free stack. Groq API key at [console.groq.com](https://console.groq.com) — no credit card needed.
 
-## Progress
+---
 
-| Feature                          | Status  |
-| -------------------------------- | ------- |
-| Project setup & FastAPI          | ✅ Done |
-| Multi-format document extraction | ✅ Done |
-| Chunking + embeddings + ChromaDB | ✅ Done |
-| Search / retrieval endpoint      | ✅ Done |
-| LLM response via Groq            | ✅ Done |
-| React frontend                   | ✅ Done |
-| Deploy to Railway + Vercel       | ✅ Done |
+## API
 
-## Local Setup
+| Method   | Endpoint          | Description                                  |
+| -------- | ----------------- | -------------------------------------------- |
+| `GET`    | `/health`         | Service health check                         |
+| `POST`   | `/upload`         | Ingest a document into the vector store      |
+| `POST`   | `/search`         | Semantic search across stored chunks         |
+| `POST`   | `/ask`            | Full RAG pipeline — returns answer + sources |
+| `GET`    | `/documents`      | List all stored documents                    |
+| `DELETE` | `/documents/{id}` | Remove a document from the store             |
+| `GET`    | `/stats`          | Vector store statistics                      |
 
-### Prerequisites
+---
 
-- Python 3.11
-- Node.js 18+
-- Groq API key → [console.groq.com](https://console.groq.com) (free, no credit card)
+## Local Development
 
-### Backend
+**Prerequisites:** Python 3.11 · Node.js 18+ · [Groq API key](https://console.groq.com)
 
 ```bash
+# Backend
 cd backend
 python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # Mac / Linux
-
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
+cp .env.example .env         # add your GROQ_API_KEY
+uvicorn main:app --reload    # → http://localhost:8000/docs
 
-cp .env.example .env
-# Open .env — paste your GROQ_API_KEY
-
-uvicorn main:app --reload
-```
-
-API docs: **http://localhost:8000/docs**
-
-### Frontend
-
-```bash
+# Frontend
 cd frontend
 npm install
-npm run dev
+npm run dev                  # → http://localhost:5173
+
+# Verify
+cd backend && python verify.py
 ```
 
-App: **http://localhost:5173**
-
-### Verify everything works
-
-```bash
-cd backend
-python verify.py
-```
-
-## API Endpoints
-
-| Method | Endpoint        | Description                                    |
-| ------ | --------------- | ---------------------------------------------- |
-| GET    | /health         | Health check                                   |
-| POST   | /upload         | Upload document → extract, chunk, embed, store |
-| POST   | /search         | Search stored chunks by query                  |
-| POST   | /ask            | Full RAG — question → grounded answer          |
-| GET    | /documents      | List all stored documents                      |
-| DELETE | /documents/{id} | Delete a document                              |
-| GET    | /stats          | Collection stats                               |
+---
 
 ## Project Structure
 
 ```
 documind-ai/
 ├── backend/
-│   ├── main.py            # FastAPI app + all routes
-│   ├── ingest.py          # Doc extraction + chunking + embeddings
-│   ├── retriever.py       # ChromaDB similarity search
-│   ├── llm.py             # Prompt builder + Groq LLM
-│   ├── verify.py          # Pre-run health check
-│   ├── requirements.txt
-│   ├── railway.toml       # Railway deploy config
-│   ├── Procfile           # Backup start command
-│   └── .env.example
+│   ├── main.py          # FastAPI app + all routes
+│   ├── ingest.py        # Extraction · chunking · embeddings
+│   ├── retriever.py     # ChromaDB similarity search
+│   ├── llm.py           # Prompt builder + Groq LLM
+│   ├── verify.py        # Health check script
+│   └── requirements.txt
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── api.js
-│   │   ├── index.css
-│   │   └── components/
-│   │       ├── ChatBox.jsx
-│   │       ├── DocList.jsx
-│   │       └── UploadZone.jsx
-│   ├── vercel.json        # Vercel deploy config
-│   ├── vite.config.js
-│   └── .env.example
-├── .github/
-│   └── workflows/
-│       └── ci.yml
+│   └── src/
+│       ├── App.jsx
+│       ├── api.js
+│       ├── index.css
+│       └── components/
+│           ├── ChatBox.jsx
+│           ├── DocList.jsx
+│           └── UploadZone.jsx
+├── .github/workflows/
+│   └── ci.yml
 └── README.md
 ```
 
-## Deploying
-
-### Backend → Railway
-
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Select `documind-ai` repo → set **Root Directory** to `backend`
-3. Add environment variables:
-   - `GROQ_API_KEY` = your Groq key
-   - `FRONTEND_URL` = your Vercel URL (add after frontend deploy)
-4. Railway auto-deploys on every push to `main`
-5. Copy your Railway URL (e.g. `https://documind-ai-production.up.railway.app`)
-
-### Frontend → Vercel
-
-1. Go to [vercel.com](https://vercel.com) → New Project → Import from GitHub
-2. Select `documind-ai` repo → set **Root Directory** to `frontend`
-3. Add environment variable:
-   - `VITE_API_URL` = your Railway backend URL
-4. Vercel auto-deploys on every push to `main`
-5. Copy your Vercel URL → go back to Railway → add it as `FRONTEND_URL`
+---
 
 ## License
 

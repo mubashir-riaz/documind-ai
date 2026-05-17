@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: ["**"]
-  pull_request:
-    branches: [main, dev]
 
 jobs:
   # ── Backend ────────────────────────────────────────────────────────────────
@@ -30,6 +28,13 @@ jobs:
       - name: Lint with ruff
         run: ruff check . --ignore E501
 
+      - name: Run Unit Tests
+        env:
+          GROQ_API_KEY: dummy_key_for_ci
+          CHROMADB_TELEMETRY: "off"
+        run: |
+          pytest
+
       - name: Check FastAPI starts and /health returns 200
         env:
           GROQ_API_KEY: dummy_key_for_ci
@@ -39,7 +44,7 @@ jobs:
           sleep 15
           curl -f http://127.0.0.1:8000/health
 
-  # ──Frontend───────────────────────────────────────────────────────────────
+  # ── Frontend ───────────────────────────────────────────────────────────────
   frontend:
     runs-on: ubuntu-latest
     defaults:

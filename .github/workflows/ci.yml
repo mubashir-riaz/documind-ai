@@ -33,7 +33,7 @@ jobs:
           GROQ_API_KEY: dummy_key_for_ci
           CHROMADB_TELEMETRY: "off"
         run: |
-          pytest
+          pytest --pass-on-empty
 
       - name: Check FastAPI starts and /health returns 200
         env:

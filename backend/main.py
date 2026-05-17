@@ -8,10 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-
 from ingest import extract_text, chunk_text, embed_and_store, SUPPORTED_FORMATS
 from retriever import search, list_documents, delete_document, collection_stats
 from llm import answer_question
+
 
 load_dotenv()
 

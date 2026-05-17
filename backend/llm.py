@@ -144,3 +144,4 @@ def answer_question(question: str, context_chunks: list[str]) -> dict:
         "chunks_used":   len(context_chunks),
         "context_chars": sum(len(c) for c in context_chunks),
     }
+ 

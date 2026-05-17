@@ -137,3 +137,4 @@ def collection_stats() -> dict:
         "collection":      "documents",
         "model":           "all-MiniLM-L6-v2",
     }
+

@@ -70,9 +70,11 @@ Every answer comes with source chunks and relevance scores so you can verify exa
 # Backend
 cd backend
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Mac/Linux
 pip install -r requirements.txt
-cp .env.example .env         # add your GROQ_API_KEY
+cp .env.example .env            # Windows
+# cp .env.example .env          # Mac/Linux (same command)
 uvicorn main:app --reload    # → http://localhost:8000/docs
 
 # Frontend
@@ -80,8 +82,6 @@ cd frontend
 npm install
 npm run dev                  # → http://localhost:5173
 
-# Verify
-cd backend && python verify.py
 ```
 
 ---
@@ -95,7 +95,6 @@ documind-ai/
 │   ├── ingest.py        # Extraction · chunking · embeddings
 │   ├── retriever.py     # ChromaDB similarity search
 │   ├── llm.py           # Prompt builder + Groq LLM
-│   ├── verify.py        # Health check script
 │   └── requirements.txt
 ├── frontend/
 │   └── src/

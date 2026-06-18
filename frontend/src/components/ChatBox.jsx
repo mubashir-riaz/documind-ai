@@ -164,7 +164,13 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc }) 
         {selectedDocId ? (
           <>
             <span className="context-doc">📄 {selectedDocName || selectedDocId.slice(0, 12) + '…'}</span>
-            <button className="context-clear" onClick={onClearDoc}>✕ clear</button>
+            <button className="context-clear" onClick={onClearDoc}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px', display: 'inline-block', verticalAlign: 'middle' }}>
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              clear
+            </button>
           </>
         ) : (
           <span className="context-all">All documents (select one for focused answers)</span>
@@ -207,7 +213,10 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc }) 
             disabled={!canSend}
             title="Send (Enter)"
           >
-            ↑
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
           </button>
         </div>
         <div className="input-hint">

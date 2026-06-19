@@ -116,7 +116,7 @@ async def upload_document(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Chunking failed: {e}")
 
     try:
-        store_result = embed_and_store(chunks, doc_id)
+        store_result = embed_and_store(chunks, doc_id, filename=file.filename)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Embedding failed: {e}")
 

@@ -213,13 +213,14 @@ def get_embedding_model():
     return SentenceTransformer("all-MiniLM-L6-v2")
 
 
-def embed_and_store(chunks: list[str], doc_id: str) -> dict:
+def embed_and_store(chunks: list[str], doc_id: str, filename: str = None) -> dict:
     """
     Embed each chunk with sentence-transformers and store in ChromaDB.
 
     Args:
         chunks: list of text chunks from chunk_text()
         doc_id: unique document ID
+        filename: original name of the document
 
     Returns:
         dict with storage stats
@@ -232,7 +233,12 @@ def embed_and_store(chunks: list[str], doc_id: str) -> dict:
 
     ids = [f"{doc_id}_chunk_{i}" for i in range(len(chunks))]
     metadatas = [
-        {"doc_id": doc_id, "chunk_index": i, "chunk_total": len(chunks)}
+        {
+            "doc_id": doc_id,
+            "chunk_index": i,
+            "chunk_total": len(chunks),
+            "filename": filename or "Untitled"
+        }
         for i in range(len(chunks))
     ]
 

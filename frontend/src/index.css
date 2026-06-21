@@ -1119,6 +1119,12 @@ body {
   color: var(--red);
 }
 
+.toast.info {
+  background: var(--accent-dim);
+  border: 1px solid var(--border-hi);
+  color: var(--accent);
+}
+
 /* ── Upload Status Messages ───────────────────────────────────────────────── */
 .upload-status {
   margin-top: 12px;

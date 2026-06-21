@@ -8,6 +8,7 @@ export default function App() {
   const [online, setOnline] = useState(null); // null=checking, true, false
   const [docs, setDocs] = useState([]);
   const [stats, setStats] = useState(null);
+  const [toast, setToast] = useState(null); // { message, type }
 
   // ── Chat sessions state with local storage persistence ─────────────────
   const [chats, setChats] = useState(() => {
@@ -39,6 +40,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("documind_active_chat_id", activeChatId);
   }, [activeChatId]);
+
+  // Clear toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // ── On mount: check health + load docs ───────────────────────────────────
   useEffect(() => {
@@ -108,6 +117,17 @@ export default function App() {
   function handleSelectDoc(docId) {
     const doc = docs.find((d) => d.doc_id === docId);
     if (!doc) return;
+
+    // Prevent duplicate chats: Check if a chat session with this document already exists
+    const existingChat = chats.find((c) => c.docId === docId);
+    if (existingChat) {
+      setActiveChatId(existingChat.id);
+      setToast({
+        message: `Chat with "${doc.filename}" already exists.`,
+        type: "info"
+      });
+      return;
+    }
 
     // If active chat is an empty general/new chat, update it in-place
     const isActiveChatEmptyGeneral = activeChat.docId === null && activeChat.messages.length === 0;
@@ -380,6 +400,12 @@ export default function App() {
           onMessagesChange={handleMessagesChange}
         />
       </main>
+
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

@@ -109,15 +109,33 @@ export default function App() {
     const doc = docs.find((d) => d.doc_id === docId);
     if (!doc) return;
 
-    // Create a new chat session linked to this document
-    const newChat = {
-      id: "chat_" + Date.now(),
-      title: doc.filename,
-      docId: docId,
-      messages: []
-    };
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
+    // If active chat is an empty general/new chat, update it in-place
+    const isActiveChatEmptyGeneral = activeChat.docId === null && activeChat.messages.length === 0;
+
+    if (isActiveChatEmptyGeneral) {
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === activeChat.id) {
+            return {
+              ...c,
+              docId: docId,
+              title: doc.filename
+            };
+          }
+          return c;
+        })
+      );
+    } else {
+      // Create a new chat session linked to this document
+      const newChat = {
+        id: "chat_" + Date.now(),
+        title: doc.filename,
+        docId: docId,
+        messages: []
+      };
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+    }
   }
 
   function handleClearActiveDoc() {
@@ -177,15 +195,33 @@ export default function App() {
         : prev,
     );
 
-    // Create a new chat session for this uploaded document
-    const newChat = {
-      id: "chat_" + Date.now(),
-      title: result.filename,
-      docId: result.doc_id,
-      messages: []
-    };
-    setChats((prev) => [newChat, ...prev]);
-    setActiveChatId(newChat.id);
+    // If active chat is an empty general/new chat, update it in-place
+    const isActiveChatEmptyGeneral = activeChat.docId === null && activeChat.messages.length === 0;
+
+    if (isActiveChatEmptyGeneral) {
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === activeChat.id) {
+            return {
+              ...c,
+              docId: result.doc_id,
+              title: result.filename
+            };
+          }
+          return c;
+        })
+      );
+    } else {
+      // Create a new chat session for this uploaded document
+      const newChat = {
+        id: "chat_" + Date.now(),
+        title: result.filename,
+        docId: result.doc_id,
+        messages: []
+      };
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+    }
   }
 
   // ── After delete, remove from list + unlink from chats ───────────────────

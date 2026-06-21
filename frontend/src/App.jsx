@@ -106,21 +106,28 @@ export default function App() {
   }
 
   function handleSelectDoc(docId) {
+    const doc = docs.find((d) => d.doc_id === docId);
+    if (!doc) return;
+
+    // Create a new chat session linked to this document
+    const newChat = {
+      id: "chat_" + Date.now(),
+      title: doc.filename,
+      docId: docId,
+      messages: []
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+  }
+
+  function handleClearActiveDoc() {
     setChats((prev) =>
       prev.map((c) => {
         if (c.id === activeChat.id) {
-          const newDocId = c.docId === docId ? null : docId;
-          let newTitle = c.title;
-          
-          // Auto-rename chat if it has a placeholder name
-          if (c.title === "New Chat" || c.title === "General Chat") {
-            const doc = docs.find((d) => d.doc_id === newDocId);
-            newTitle = doc ? doc.filename : "General Chat";
-          }
           return {
             ...c,
-            docId: newDocId,
-            title: newTitle
+            docId: null,
+            title: "General Chat"
           };
         }
         return c;
@@ -152,7 +159,7 @@ export default function App() {
     );
   }
 
-  // ── After a successful upload, add to list + link to current chat ───────
+  // ── After a successful upload, add to list + create a new linked chat ───
   function onUploaded(result) {
     const newDoc = {
       doc_id: result.doc_id,
@@ -170,19 +177,15 @@ export default function App() {
         : prev,
     );
 
-    // Auto-link this new document to the active chat session and update its title
-    setChats((prev) =>
-      prev.map((c) => {
-        if (c.id === activeChat.id) {
-          return {
-            ...c,
-            docId: result.doc_id,
-            title: result.filename
-          };
-        }
-        return c;
-      })
-    );
+    // Create a new chat session for this uploaded document
+    const newChat = {
+      id: "chat_" + Date.now(),
+      title: result.filename,
+      docId: result.doc_id,
+      messages: []
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
   }
 
   // ── After delete, remove from list + unlink from chats ───────────────────
@@ -336,7 +339,7 @@ export default function App() {
         <ChatBox
           selectedDocId={selectedDocId}
           selectedDocName={selectedDocName}
-          onClearDoc={() => handleSelectDoc(selectedDocId)}
+          onClearDoc={handleClearActiveDoc}
           messages={activeChat.messages}
           onMessagesChange={handleMessagesChange}
         />

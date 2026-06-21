@@ -87,8 +87,7 @@ function Welcome() {
   )
 }
 
-export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc }) {
-  const [messages,  setMessages]  = useState([])
+export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, messages = [], onMessagesChange }) {
   const [input,     setInput]     = useState('')
   const [thinking,  setThinking]  = useState(false)
   const bottomRef                 = useRef(null)
@@ -119,7 +118,8 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc }) 
     if (!question || thinking) return
 
     // Add user message
-    setMessages(prev => [...prev, { role: 'user', text: question }])
+    const updatedWithUser = [...messages, { role: 'user', text: question }]
+    onMessagesChange(updatedWithUser)
     setInput('')
 
     // Reset textarea height
@@ -136,14 +136,14 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc }) 
         topK:  5,
       })
 
-      setMessages(prev => [...prev, {
+      onMessagesChange([...updatedWithUser, {
         role:    'assistant',
         text:    result.answer,
         sources: result.sources,
         model:   result.model,
       }])
     } catch (err) {
-      setMessages(prev => [...prev, {
+      onMessagesChange([...updatedWithUser, {
         role:  'assistant',
         text:  err.message || 'Something went wrong. Please try again.',
         error: true,

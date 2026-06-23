@@ -9,6 +9,7 @@ export default function App() {
   const [docs, setDocs] = useState([]);
   const [stats, setStats] = useState(null);
   const [toast, setToast] = useState(null); // { message, type }
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // ── Chat sessions state with local storage persistence ─────────────────
   const [chats, setChats] = useState(() => {
@@ -93,6 +94,7 @@ export default function App() {
     };
     setChats((prev) => [newChat, ...prev]);
     setActiveChatId(newChat.id);
+    setSidebarOpen(false);
   }
 
   function handleDeleteChat(e, chatId) {
@@ -126,6 +128,7 @@ export default function App() {
         message: `Chat with "${doc.filename}" already exists.`,
         type: "info"
       });
+      setSidebarOpen(false);
       return;
     }
 
@@ -156,6 +159,7 @@ export default function App() {
       setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat.id);
     }
+    setSidebarOpen(false);
   }
 
   function handleClearActiveDoc() {
@@ -242,6 +246,7 @@ export default function App() {
       setChats((prev) => [newChat, ...prev]);
       setActiveChatId(newChat.id);
     }
+    setSidebarOpen(false);
   }
 
   // ── After delete, remove from list + unlink from chats ───────────────────
@@ -283,6 +288,18 @@ export default function App() {
     <div className="app">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="header">
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open sidebar"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <div className="header-logo">
           Docu<span>Mind</span>
         </div>
@@ -291,7 +308,7 @@ export default function App() {
           <span
             className={`status-dot ${online === true ? "online" : online === false ? "offline" : ""}`}
           />
-          <span>
+          <span className="status-text">
             {online === null
               ? "connecting…"
               : online === true
@@ -301,8 +318,27 @@ export default function App() {
         </div>
       </header>
 
+      {/* Backdrop for mobile */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        {/* Mobile Header */}
+        <div className="sidebar-mobile-header">
+          <div className="header-logo">
+            Docu<span>Mind</span>
+          </div>
+          <button
+            className="sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
+        </div>
+
         {/* Upload */}
         <div className="sidebar-section">
           <div className="sidebar-label">Upload</div>
@@ -325,7 +361,10 @@ export default function App() {
                 <div
                   key={chat.id}
                   className={`chat-item ${isActive ? "selected" : ""}`}
-                  onClick={() => setActiveChatId(chat.id)}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setSidebarOpen(false);
+                  }}
                 >
                   <span className="chat-icon">💬</span>
                   <div className="chat-info">

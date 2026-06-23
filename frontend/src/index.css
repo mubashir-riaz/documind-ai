@@ -96,7 +96,7 @@ body {
 @media (max-width: 768px) {
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: 60px auto 1fr;
+    grid-template-rows: 60px 1fr;
   }
 }
 
@@ -1333,4 +1333,159 @@ a:hover {
 .chat-delete-btn:hover {
   color: #ffffff;
   background: var(--red);
+}
+
+/* ── Responsive Styling overrides & mobile drawer ────────────────────────── */
+
+/* Header Sidebar toggle button styling */
+.sidebar-toggle-btn {
+  display: none; /* Hide by default on desktop */
+}
+
+@media (max-width: 768px) {
+  /* Header adjustments */
+  .header {
+    padding: 0 16px;
+    gap: 12px;
+  }
+
+  .sidebar-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out);
+  }
+
+  .sidebar-toggle-btn:hover {
+    border-color: var(--border-hi);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .header-logo {
+    font-size: 19px;
+  }
+
+  /* Sidebar drawer behavior */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 85vw;
+    z-index: 100;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+    background: var(--bg-1);
+    border-right: 1px solid var(--border);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Mobile sidebar header */
+  .sidebar-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar-mobile-header .header-logo {
+    font-size: 19px;
+  }
+
+  .sidebar-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-3);
+    font-size: 20px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* Sidebar backdrop */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  /* Make delete buttons visible on mobile touch screens */
+  .doc-delete,
+  .chat-delete-btn {
+    opacity: 1 !important;
+  }
+
+  /* Truncate context bar long tip on mobile */
+  .context-tip {
+    display: none;
+  }
+
+  .context-bar {
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  /* Welcome Screen scaling */
+  .welcome-title {
+    font-size: 32px !important;
+  }
+
+  .welcome-glyph {
+    font-size: 48px;
+  }
+
+  .welcome-steps {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Stats alignment */
+  .stats-bar {
+    padding: 12px 16px;
+  }
+
+  .stat {
+    padding: 6px;
+  }
+
+  .stat-value {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-status {
+    padding: 6px;
+  }
+  .status-text {
+    display: none;
+  }
 }

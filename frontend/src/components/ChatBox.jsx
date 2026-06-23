@@ -173,7 +173,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
             </button>
           </>
         ) : (
-          <span className="context-all">All documents (select one for focused answers)</span>
+          <span className="context-all">All documents <span className="context-tip">(select one for focused answers)</span></span>
         )}
       </div>
 

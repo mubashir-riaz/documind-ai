@@ -1338,7 +1338,8 @@ a:hover {
 /* ── Responsive Styling overrides & mobile drawer ────────────────────────── */
 
 /* Header Sidebar toggle button styling */
-.sidebar-toggle-btn {
+.sidebar-toggle-btn,
+.sidebar-mobile-header {
   display: none; /* Hide by default on desktop */
 }
 

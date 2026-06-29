@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
-import { checkHealth, listDocuments, getStats } from "./api.js";
+import { listDocuments, getStats } from "./api.js";
 import UploadZone from "./components/UploadZone.jsx";
 import DocList from "./components/DocList.jsx";
 import ChatBox from "./components/ChatBox.jsx";
+import useBackendWake from "./hooks/useBackendWake.js";
+import WakeScreen from "./components/WakeScreen.jsx";
 
 export default function App() {
+  const { status: wakeStatus, elapsedTime, attempt, retry: triggerRetry } = useBackendWake();
+  const [showWakeScreen, setShowWakeScreen] = useState(true);
+  const [fadeOutWakeScreen, setFadeOutWakeScreen] = useState(false);
+
   const [online, setOnline] = useState(null); // null=checking, true, false
   const [docs, setDocs] = useState([]);
   const [stats, setStats] = useState(null);
@@ -50,15 +56,6 @@ export default function App() {
     }
   }, [toast]);
 
-  // ── On mount: check health + load docs ───────────────────────────────────
-  useEffect(() => {
-    checkHealth()
-      .then(() => setOnline(true))
-      .catch(() => setOnline(false));
-
-    fetchDocs();
-  }, []);
-
   async function fetchDocs() {
     try {
       const [docsRes, statsRes] = await Promise.all([
@@ -71,6 +68,39 @@ export default function App() {
       // backend might not be running — fail silently
     }
   }
+
+  // ── Sync with backend wake status ──────────────────────────────────────────
+  useEffect(() => {
+    if (wakeStatus === "ready") {
+      const stateTimer = setTimeout(() => {
+        setOnline(true);
+        fetchDocs();
+        setFadeOutWakeScreen(true);
+      }, 0);
+      
+      const timer = setTimeout(() => {
+        setShowWakeScreen(false);
+      }, 500); // matches the CSS transition time
+      return () => {
+        clearTimeout(stateTimer);
+        clearTimeout(timer);
+      };
+    } else if (wakeStatus === "error") {
+      const stateTimer = setTimeout(() => {
+        setOnline(false);
+        setShowWakeScreen(true);
+        setFadeOutWakeScreen(false);
+      }, 0);
+      return () => clearTimeout(stateTimer);
+    } else {
+      const stateTimer = setTimeout(() => {
+        setOnline(null); // connecting...
+        setShowWakeScreen(true);
+        setFadeOutWakeScreen(false);
+      }, 0);
+      return () => clearTimeout(stateTimer);
+    }
+  }, [wakeStatus]);
 
   // ── Find active chat session ─────────────────────────────────────────────
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0] || {
@@ -444,6 +474,16 @@ export default function App() {
         <div className={`toast ${toast.type}`}>
           {toast.message}
         </div>
+      )}
+
+      {showWakeScreen && (
+        <WakeScreen
+          status={wakeStatus}
+          elapsedTime={elapsedTime}
+          attempt={attempt}
+          retry={triggerRetry}
+          fadeOut={fadeOutWakeScreen}
+        />
       )}
     </div>
   );

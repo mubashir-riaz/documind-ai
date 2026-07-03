@@ -69,7 +69,11 @@ function ThinkingBubble() {
   )
 }
 
-function Welcome() {
+function Welcome({ hasDocs, hasSelectedDoc }) {
+  const isStep1Active = !hasDocs
+  const isStep2Active = hasDocs && !hasSelectedDoc
+  const isStep3Active = hasSelectedDoc
+
   return (
     <div className="welcome">
       <div className="welcome-glyph">🧠</div>
@@ -79,15 +83,24 @@ function Welcome() {
         Answers are grounded in your content — not guessed.
       </div>
       <div className="welcome-steps">
-        <div className="step-pill"><span className="num">1</span> Upload a document</div>
-        <div className="step-pill"><span className="num">2</span> Select it in the sidebar</div>
-        <div className="step-pill"><span className="num">3</span> Ask any question</div>
+        <div className={`step-pill ${isStep1Active ? 'active' : ''}`}>
+          <span className="num">1</span>
+          <span>Upload a document</span>
+        </div>
+        <div className={`step-pill ${isStep2Active ? 'active' : ''}`}>
+          <span className="num">2</span>
+          <span>Select it in the sidebar</span>
+        </div>
+        <div className={`step-pill ${isStep3Active ? 'active' : ''}`}>
+          <span className="num">3</span>
+          <span>Ask any question</span>
+        </div>
       </div>
     </div>
   )
 }
 
-export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, messages = [], onMessagesChange }) {
+export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, messages = [], onMessagesChange, hasDocs }) {
   const [input,     setInput]     = useState('')
   const [thinking,  setThinking]  = useState(false)
   const bottomRef                 = useRef(null)
@@ -153,7 +166,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
     }
   }
 
-  const canSend   = input.trim().length > 0 && !thinking
+  const canSend   = input.trim().length > 0 && !thinking && !!selectedDocId
   const showEmpty = messages.length === 0 && !thinking
 
   return (
@@ -173,13 +186,13 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
             </button>
           </>
         ) : (
-          <span className="context-all">All documents <span className="context-tip">(select one for focused answers)</span></span>
+          <span className="context-all no-doc">No document selected <span className="context-tip">(select one from the library to ask questions)</span></span>
         )}
       </div>
 
       {/* Messages */}
       <div className="messages">
-        {showEmpty && <Welcome />}
+        {showEmpty && <Welcome hasDocs={hasDocs} hasSelectedDoc={!!selectedDocId} />}
 
         {messages.map((msg, i) => (
           <Message key={i} msg={msg} />
@@ -192,7 +205,7 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
 
       {/* Input */}
       <div className="input-area">
-        <div className="input-row">
+        <div className={`input-row ${!selectedDocId ? 'disabled' : ''}`}>
           <textarea
             ref={textareaRef}
             className="input-box"
@@ -200,18 +213,20 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
             placeholder={
               selectedDocId
                 ? 'Ask anything about this document…'
-                : 'Ask a question across all documents…'
+                : hasDocs
+                  ? 'Please select a document from the library to start chatting…'
+                  : 'Please upload a document to start chatting…'
             }
             value={input}
             onChange={onInputChange}
             onKeyDown={onKeyDown}
-            disabled={thinking}
+            disabled={thinking || !selectedDocId}
           />
           <button
             className="send-btn"
             onClick={handleSend}
             disabled={!canSend}
-            title="Send (Enter)"
+            title={selectedDocId ? 'Send (Enter)' : 'Please select a document first'}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -220,7 +235,9 @@ export default function ChatBox({ selectedDocId, selectedDocName, onClearDoc, me
           </button>
         </div>
         <div className="input-hint">
-          Enter to send · Shift+Enter for new line
+          {selectedDocId 
+            ? 'Enter to send · Shift+Enter for new line' 
+            : 'Chat is disabled until a document is selected.'}
         </div>
       </div>
     </>

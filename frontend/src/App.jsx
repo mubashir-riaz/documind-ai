@@ -467,6 +467,7 @@ export default function App() {
           onClearDoc={handleClearActiveDoc}
           messages={activeChat.messages}
           onMessagesChange={handleMessagesChange}
+          hasDocs={docs.length > 0}
         />
       </main>
 

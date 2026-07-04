@@ -37,6 +37,80 @@ function SourcesAccordion({ sources }) {
   )
 }
 
+function formatMessageText(text) {
+  if (!text) return "";
+
+  // Split by code blocks first (e.g. ```python ... ```)
+  const parts = text.split(/(```[\s\S]*?```)/g);
+
+  return parts.map((part, i) => {
+    if (part.startsWith("```") && part.endsWith("```")) {
+      const content = part.slice(3, -3).trim();
+      const firstLineBreak = content.indexOf("\n");
+      let lang = "";
+      let code = content;
+      if (firstLineBreak !== -1) {
+        lang = content.slice(0, firstLineBreak).trim();
+        code = content.slice(firstLineBreak + 1);
+      }
+      return (
+        <pre key={i} className="code-block" style={{ margin: '8px 0', padding: '12px', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', overflowX: 'auto' }}>
+          {lang && <div className="code-lang" style={{ fontSize: '10px', textTransform: 'uppercase', opacity: 0.5, marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>{lang}</div>}
+          <code style={{ fontFamily: 'var(--font-mono)', fontSize: '13px' }}>{code}</code>
+        </pre>
+      );
+    }
+
+    // Process normal text lines
+    const lines = part.split("\n");
+    return lines.map((line, j) => {
+      // Check if line is bullet list or numbered list
+      const isBullet = line.trim().startsWith("* ") || line.trim().startsWith("- ");
+      const isNumbered = /^\d+\.\s/.test(line.trim());
+
+      let content = line;
+      if (isBullet) {
+        content = content.trim().replace(/^[-*]\s+/, "");
+      } else if (isNumbered) {
+        content = content.trim().replace(/^\d+\.\s+/, "");
+      }
+
+      // Inline formatting: bold (**), italic (*), inline code (`)
+      const tokens = content.split(/(\*\*.*?\*\*|`.*?`|\*.*?\*)/g);
+      const renderedTokens = tokens.map((token, k) => {
+        if (token.startsWith("**") && token.endsWith("**")) {
+          return <strong key={k} style={{ color: 'var(--accent)', fontWeight: '600' }}>{token.slice(2, -2)}</strong>;
+        }
+        if (token.startsWith("*") && token.endsWith("*")) {
+          return <em key={k}>{token.slice(1, -1)}</em>;
+        }
+        if (token.startsWith("`") && token.endsWith("`")) {
+          return <code key={k} style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', background: 'rgba(255, 255, 255, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>{token.slice(1, -1)}</code>;
+        }
+        return token;
+      });
+
+      if (isBullet) {
+        return <li key={j} className="msg-bullet" style={{ marginLeft: '16px', listStyleType: 'disc' }}>{renderedTokens}</li>;
+      }
+      if (isNumbered) {
+        return <li key={j} className="msg-numbered" style={{ marginLeft: '16px', listStyleType: 'decimal' }}>{renderedTokens}</li>;
+      }
+
+      // Return a paragraph. If line is empty, render a small space or ignore to prevent double spacing
+      if (line.trim() === "") {
+        return <div key={j} style={{ height: '0.5em' }} />;
+      }
+
+      return (
+        <p key={j} className="msg-paragraph" style={{ margin: '0 0 0.5em 0' }}>
+          {renderedTokens}
+        </p>
+      );
+    });
+  });
+}
+
 function Message({ msg }) {
   return (
     <div className={`message ${msg.role}`}>
@@ -45,7 +119,7 @@ function Message({ msg }) {
       {msg.role === 'assistant' && msg.error ? (
         <div className="error-bubble">{msg.text}</div>
       ) : (
-        <div className="msg-bubble">{msg.text}</div>
+        <div className="msg-bubble">{formatMessageText(msg.text)}</div>
       )}
 
       {msg.role === 'assistant' && msg.sources && (

@@ -116,12 +116,18 @@ def _extract_pptx(file_path: str) -> str:
     for slide_num, slide in enumerate(prs.slides, start=1):
         slide_texts = []
         for shape in slide.shapes:
-            if not shape.has_text_frame:
-                continue
-            for para in shape.text_frame.paragraphs:
-                line = " ".join(run.text for run in para.runs).strip()
-                if line:
-                    slide_texts.append(line)
+            if shape.has_text_frame:
+                for para in shape.text_frame.paragraphs:
+                    line = " ".join(run.text for run in para.runs).strip()
+                    if line:
+                        slide_texts.append(line)
+            elif shape.has_table:
+                for row in shape.table.rows:
+                    row_text = " | ".join(
+                        cell.text.strip() for cell in row.cells if cell.text.strip()
+                    )
+                    if row_text:
+                        slide_texts.append(row_text)
 
         if slide_texts:
             text_parts.append(f"[Slide {slide_num}]\n" + "\n".join(slide_texts))

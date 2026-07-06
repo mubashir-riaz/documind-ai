@@ -29,6 +29,13 @@ export default function UploadZone({ onUploaded }) {
       return
     }
 
+    const max_size_mb = 20
+    if (file.size > max_size_mb * 1024 * 1024) {
+      setStatus('error')
+      setMessage(`File too large: ${(file.size / (1024 * 1024)).toFixed(1)}MB. Max limit is ${max_size_mb}MB.`)
+      return
+    }
+
     setStatus('uploading')
     setProgress(0)
     setMessage(`Uploading ${file.name}…`)

@@ -136,6 +136,13 @@ def delete_document(doc_id: str) -> dict:
 
     _collection.delete(where={"doc_id": doc_id})
 
+    # Delete physical file from uploads/
+    from pathlib import Path
+    uploads_dir = Path("uploads")
+    if uploads_dir.exists():
+        for match in uploads_dir.glob(f"{doc_id}.*"):
+            match.unlink(missing_ok=True)
+
     return {
         "doc_id":          doc_id,
         "chunks_deleted":  count,

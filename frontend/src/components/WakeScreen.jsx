@@ -1,4 +1,10 @@
-export default function WakeScreen({ status, elapsedTime, attempt, retry, fadeOut }) {
+export default function WakeScreen({
+  status,
+  elapsedTime,
+  attempt,
+  retry,
+  fadeOut,
+}) {
   // If the app is ready and the fade out is complete (or not showing), do not render
   if (status === "ready" && !fadeOut) {
     return null;
@@ -26,19 +32,25 @@ export default function WakeScreen({ status, elapsedTime, attempt, retry, fadeOu
             <div className="wakescreen-content">
               <h2 className="wakescreen-title">Starting DocuMind AI...</h2>
               <p className="wakescreen-subtitle">Waking up server...</p>
-              
+
               <div className="wakescreen-metrics">
                 <div className="wakescreen-metric-badge active">
-                  Attempt: <span className="wakescreen-metric-value">{attempt} / 10</span>
+                  Attempt:{" "}
+                  <span className="wakescreen-metric-value">
+                    {attempt} / 10
+                  </span>
                 </div>
                 <div className="wakescreen-metric-badge">
-                  Elapsed: <span className="wakescreen-metric-value">{elapsedTime}s</span>
+                  Elapsed:{" "}
+                  <span className="wakescreen-metric-value">
+                    {elapsedTime}s
+                  </span>
                 </div>
               </div>
 
               <p className="wakescreen-info-tip">
-                Note: The FastAPI backend is hosted on a sleep-on-idle server (Railway).
-                Waking it up from a cold-start usually takes 5 to 30 seconds.
+                Note: The AI server may take 5–30 seconds to start if it has
+                been idle. Thank you for your patience.
               </p>
             </div>
           </>
@@ -50,24 +62,26 @@ export default function WakeScreen({ status, elapsedTime, attempt, retry, fadeOu
             <div className="wakescreen-error-icon">⚠️</div>
 
             <div className="wakescreen-content">
-              <h2 className="wakescreen-title">Connection Timeout</h2>
+              <h2 className="wakescreen-title">Unable to Connect</h2>
               <p className="wakescreen-subtitle">
-                The server did not respond to connection attempts.
+                The AI service is currently unavailable.
               </p>
 
               <div className="wakescreen-error-box">
-                All 10 attempts failed to wake up the server. The connection process timed out after{" "}
+                We couldn't establish a connection after multiple attempts. The
+                connection process timed out after{" "}
                 <strong>{elapsedTime} seconds</strong>.
               </div>
 
               <div style={{ marginTop: "16px" }}>
                 <button className="wakescreen-retry-btn" onClick={retry}>
-                  🔄 Retry Connection
+                  Retry Connection
                 </button>
               </div>
 
               <p className="wakescreen-info-tip">
-                Please check your internet connection or verify the backend service status on Railway, then try again.
+                If the issue persists, please try again later.Or you can also
+                explore the project on GitHub while the service is unavailable.
               </p>
             </div>
           </>

@@ -26,7 +26,7 @@ _origins = [
     "http://localhost:4173",     # local Vite preview
 ]
 if _frontend_url:
-    _origins.append(_frontend_url)
+    _origins.append(_frontend_url.rstrip("/"))
 
 app = FastAPI(
     title="DocuMind AI",
@@ -113,11 +113,13 @@ async def upload_document(file: UploadFile = File(...)):
     try:
         chunks = chunk_text(text)
     except Exception as e:
+        save_path.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail=f"Chunking failed: {e}")
 
     try:
-        store_result = embed_and_store(chunks, doc_id)
+        store_result = embed_and_store(chunks, doc_id, filename=file.filename)
     except Exception as e:
+        save_path.unlink(missing_ok=True)
         raise HTTPException(status_code=500, detail=f"Embedding failed: {e}")
 
     return {

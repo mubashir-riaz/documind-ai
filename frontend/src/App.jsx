@@ -1,23 +1,60 @@
 import { useState, useEffect } from "react";
-import { checkHealth, listDocuments, getStats } from "./api.js";
+import { listDocuments, getStats } from "./api.js";
 import UploadZone from "./components/UploadZone.jsx";
 import DocList from "./components/DocList.jsx";
 import ChatBox from "./components/ChatBox.jsx";
+import useBackendWake from "./hooks/useBackendWake.js";
+import WakeScreen from "./components/WakeScreen.jsx";
 
 export default function App() {
+  const { status: wakeStatus, elapsedTime, attempt, retry: triggerRetry } = useBackendWake();
+  const [showWakeScreen, setShowWakeScreen] = useState(true);
+  const [fadeOutWakeScreen, setFadeOutWakeScreen] = useState(false);
+
   const [online, setOnline] = useState(null); // null=checking, true, false
   const [docs, setDocs] = useState([]);
   const [stats, setStats] = useState(null);
-  const [selectedDocId, setSelectedDocId] = useState(null);
+  const [toast, setToast] = useState(null); // { message, type }
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ── On mount: check health + load docs ───────────────────────────────────
+  // ── Chat sessions state with local storage persistence ─────────────────
+  const [chats, setChats] = useState(() => {
+    const saved = localStorage.getItem("documind_chats");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.length > 0) return parsed;
+      } catch {
+        // fail silently
+      }
+    }
+    return [
+      { id: "default", title: "General Chat", docId: null, messages: [] }
+    ];
+  });
+
+  const [activeChatId, setActiveChatId] = useState(() => {
+    const saved = localStorage.getItem("documind_active_chat_id");
+    return saved || "default";
+  });
+
+  // Save chats to localStorage
   useEffect(() => {
-    checkHealth()
-      .then(() => setOnline(true))
-      .catch(() => setOnline(false));
+    localStorage.setItem("documind_chats", JSON.stringify(chats));
+  }, [chats]);
 
-    fetchDocs();
-  }, []);
+  // Save activeChatId to localStorage
+  useEffect(() => {
+    localStorage.setItem("documind_active_chat_id", activeChatId);
+  }, [activeChatId]);
+
+  // Clear toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   async function fetchDocs() {
     try {
@@ -32,9 +69,170 @@ export default function App() {
     }
   }
 
-  // ── After a successful upload, add to the list ───────────────────────────
+  // ── Sync with backend wake status ──────────────────────────────────────────
+  useEffect(() => {
+    if (wakeStatus === "ready") {
+      const stateTimer = setTimeout(() => {
+        setOnline(true);
+        fetchDocs();
+        setFadeOutWakeScreen(true);
+      }, 0);
+      
+      const timer = setTimeout(() => {
+        setShowWakeScreen(false);
+      }, 500); // matches the CSS transition time
+      return () => {
+        clearTimeout(stateTimer);
+        clearTimeout(timer);
+      };
+    } else if (wakeStatus === "error") {
+      const stateTimer = setTimeout(() => {
+        setOnline(false);
+        setShowWakeScreen(true);
+        setFadeOutWakeScreen(false);
+      }, 0);
+      return () => clearTimeout(stateTimer);
+    } else {
+      const stateTimer = setTimeout(() => {
+        setOnline(null); // connecting...
+        setShowWakeScreen(true);
+        setFadeOutWakeScreen(false);
+      }, 0);
+      return () => clearTimeout(stateTimer);
+    }
+  }, [wakeStatus]);
+
+  // ── Find active chat session ─────────────────────────────────────────────
+  const activeChat = chats.find((c) => c.id === activeChatId) || chats[0] || {
+    id: "default",
+    title: "General Chat",
+    docId: null,
+    messages: []
+  };
+
+  const selectedDocId = activeChat.docId;
+  const selectedDoc = docs.find((d) => d.doc_id === selectedDocId);
+  const selectedDocName = selectedDoc?.filename || null;
+
+  // ── Chat handlers ────────────────────────────────────────────────────────
+  function handleNewChat() {
+    const newChat = {
+      id: "chat_" + Date.now(),
+      title: "New Chat",
+      docId: null,
+      messages: []
+    };
+    setChats((prev) => [newChat, ...prev]);
+    setActiveChatId(newChat.id);
+    setSidebarOpen(false);
+  }
+
+  function handleDeleteChat(e, chatId) {
+    e.stopPropagation();
+    
+    // Find remaining chats
+    const remaining = chats.filter((c) => c.id !== chatId);
+    
+    setChats(remaining.length > 0 ? remaining : [
+      { id: "default", title: "General Chat", docId: null, messages: [] }
+    ]);
+
+    if (activeChatId === chatId) {
+      if (remaining.length > 0) {
+        setActiveChatId(remaining[0].id);
+      } else {
+        setActiveChatId("default");
+      }
+    }
+  }
+
+  function handleSelectDoc(docId) {
+    const doc = docs.find((d) => d.doc_id === docId);
+    if (!doc) return;
+
+    // Prevent duplicate chats: Check if a chat session with this document already exists
+    const existingChat = chats.find((c) => c.docId === docId);
+    if (existingChat) {
+      setActiveChatId(existingChat.id);
+      setToast({
+        message: `Chat with "${doc.filename}" already exists.`,
+        type: "info"
+      });
+      setSidebarOpen(false);
+      return;
+    }
+
+    // If active chat is an empty general/new chat, update it in-place
+    const isActiveChatEmptyGeneral = activeChat.docId === null && activeChat.messages.length === 0;
+
+    if (isActiveChatEmptyGeneral) {
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === activeChat.id) {
+            return {
+              ...c,
+              docId: docId,
+              title: doc.filename
+            };
+          }
+          return c;
+        })
+      );
+    } else {
+      // Create a new chat session linked to this document
+      const newChat = {
+        id: "chat_" + Date.now(),
+        title: doc.filename,
+        docId: docId,
+        messages: []
+      };
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+    }
+    setSidebarOpen(false);
+  }
+
+  function handleClearActiveDoc() {
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.id === activeChat.id) {
+          return {
+            ...c,
+            docId: null,
+            title: "General Chat"
+          };
+        }
+        return c;
+      })
+    );
+  }
+
+  function handleMessagesChange(updatedMessages) {
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.id === activeChat.id) {
+          // If this was a fresh "New Chat", name it after the question to be user friendly
+          let newTitle = c.title;
+          if (c.title === "New Chat" && updatedMessages.length > 0) {
+            const firstUserMsg = updatedMessages.find(m => m.role === 'user');
+            if (firstUserMsg) {
+              const text = firstUserMsg.text;
+              newTitle = text.length > 25 ? text.slice(0, 22) + "…" : text;
+            }
+          }
+          return {
+            ...c,
+            messages: updatedMessages,
+            title: newTitle
+          };
+        }
+        return c;
+      })
+    );
+  }
+
+  // ── After a successful upload, add to list + create a new linked chat ───
   function onUploaded(result) {
-    // Add the new doc to the local list immediately (no full refetch needed)
     const newDoc = {
       doc_id: result.doc_id,
       filename: result.filename,
@@ -51,15 +249,54 @@ export default function App() {
         : prev,
     );
 
-    // Auto-select the just-uploaded doc
-    setSelectedDocId(result.doc_id);
+    // If active chat is an empty general/new chat, update it in-place
+    const isActiveChatEmptyGeneral = activeChat.docId === null && activeChat.messages.length === 0;
+
+    if (isActiveChatEmptyGeneral) {
+      setChats((prev) =>
+        prev.map((c) => {
+          if (c.id === activeChat.id) {
+            return {
+              ...c,
+              docId: result.doc_id,
+              title: result.filename
+            };
+          }
+          return c;
+        })
+      );
+    } else {
+      // Create a new chat session for this uploaded document
+      const newChat = {
+        id: "chat_" + Date.now(),
+        title: result.filename,
+        docId: result.doc_id,
+        messages: []
+      };
+      setChats((prev) => [newChat, ...prev]);
+      setActiveChatId(newChat.id);
+    }
+    setSidebarOpen(false);
   }
 
-  // ── After delete, remove from the list ──────────────────────────────────
+  // ── After delete, remove from list + unlink from chats ───────────────────
   function onDeleted(docId) {
     const removed = docs.find((d) => d.doc_id === docId);
     setDocs((prev) => prev.filter((d) => d.doc_id !== docId));
-    if (selectedDocId === docId) setSelectedDocId(null);
+
+    // Unlink the deleted document from any chat linked to it
+    setChats((prev) =>
+      prev.map((c) => {
+        if (c.docId === docId) {
+          return {
+            ...c,
+            docId: null,
+            title: c.title === removed?.filename ? "General Chat" : c.title
+          };
+        }
+        return c;
+      })
+    );
 
     if (removed && stats) {
       setStats((prev) =>
@@ -77,14 +314,22 @@ export default function App() {
     }
   }
 
-  // ── Find the selected doc's filename for display ─────────────────────────
-  const selectedDoc = docs.find((d) => d.doc_id === selectedDocId);
-  const selectedDocName = selectedDoc?.filename || null;
-
   return (
     <div className="app">
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <header className="header">
+        <button
+          className="sidebar-toggle-btn"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open sidebar"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <div className="header-logo">
           Docu<span>Mind</span>
         </div>
@@ -93,7 +338,7 @@ export default function App() {
           <span
             className={`status-dot ${online === true ? "online" : online === false ? "offline" : ""}`}
           />
-          <span>
+          <span className="status-text">
             {online === null
               ? "connecting…"
               : online === true
@@ -103,23 +348,86 @@ export default function App() {
         </div>
       </header>
 
+      {/* Backdrop for mobile */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* ── Sidebar ────────────────────────────────────────────────────── */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+        {/* Mobile Header */}
+        <div className="sidebar-mobile-header">
+          <div className="header-logo">
+            Docu<span>Mind</span>
+          </div>
+          <button
+            className="sidebar-close-btn"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close sidebar"
+          >
+            ✕
+          </button>
+        </div>
+
         {/* Upload */}
         <div className="sidebar-section">
           <div className="sidebar-label">Upload</div>
           <UploadZone onUploaded={onUploaded} />
         </div>
 
-        {/* Documents */}
+        {/* Chats Section */}
+        <div className="sidebar-section">
+          <div className="sidebar-header-row">
+            <div className="sidebar-label">Chats</div>
+            <button className="new-chat-btn" onClick={handleNewChat}>
+              ＋ New
+            </button>
+          </div>
+          <div className="chat-list">
+            {chats.map((chat) => {
+              const linkedDoc = docs.find((d) => d.doc_id === chat.docId);
+              const isActive = chat.id === activeChat.id;
+              return (
+                <div
+                  key={chat.id}
+                  className={`chat-item ${isActive ? "selected" : ""}`}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  <span className="chat-icon">💬</span>
+                  <div className="chat-info">
+                    <div className="chat-name">{chat.title}</div>
+                    <div className="chat-meta">
+                      {linkedDoc ? linkedDoc.filename : "All documents"}
+                    </div>
+                  </div>
+                  <button
+                    className="chat-delete-btn"
+                    onClick={(e) => handleDeleteChat(e, chat.id)}
+                    title="Delete chat"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Documents Library */}
         <div className="sidebar-section" style={{ flex: 1 }}>
           <div className="sidebar-label">
-            Documents {docs.length > 0 && `(${docs.length})`}
+            Documents Library {docs.length > 0 && `(${docs.length})`}
           </div>
           <DocList
             docs={docs}
             selectedDocId={selectedDocId}
-            onSelect={setSelectedDocId}
+            onSelect={handleSelectDoc}
             onDeleted={onDeleted}
           />
         </div>
@@ -156,9 +464,28 @@ export default function App() {
         <ChatBox
           selectedDocId={selectedDocId}
           selectedDocName={selectedDocName}
-          onClearDoc={() => setSelectedDocId(null)}
+          onClearDoc={handleClearActiveDoc}
+          messages={activeChat.messages}
+          onMessagesChange={handleMessagesChange}
+          hasDocs={docs.length > 0}
         />
       </main>
+
+      {toast && (
+        <div className={`toast ${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
+
+      {showWakeScreen && (
+        <WakeScreen
+          status={wakeStatus}
+          elapsedTime={elapsedTime}
+          attempt={attempt}
+          retry={triggerRetry}
+          fadeOut={fadeOutWakeScreen}
+        />
+      )}
     </div>
   );
 }

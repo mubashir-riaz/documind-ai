@@ -58,13 +58,21 @@ def search(query: str, top_k: int = 5, doc_id: str = None) -> list[dict]:
     metadatas = results["metadatas"][0]
 
     formatted = []
+    from pathlib import Path
     for text, dist, meta in zip(chunks, distances, metadatas):
+        filename = meta.get("filename")
+        if not filename:
+            did = meta.get("doc_id")
+            uploads_dir = Path("uploads")
+            matches = list(uploads_dir.glob(f"{did}.*")) if uploads_dir.exists() else []
+            filename = f"Untitled{matches[0].suffix}" if matches else "Untitled"
         formatted.append({
             "text":        text,
             "score":       round(1 - dist, 4),  # cosine distance → similarity
             "doc_id":      meta.get("doc_id"),
             "chunk_index": meta.get("chunk_index"),
             "chunk_total": meta.get("chunk_total"),
+            "filename":    filename,
         })
 
     formatted.sort(key=lambda x: x["score"], reverse=True)
@@ -80,6 +88,8 @@ def list_documents() -> list[dict]:
     Return all unique documents currently stored in ChromaDB.
     Groups chunks by doc_id and returns one entry per document.
     """
+    from pathlib import Path
+    
     total = _collection.count()
     if total == 0:
         return []
@@ -93,9 +103,15 @@ def list_documents() -> list[dict]:
     for meta in metadatas:
         did = meta.get("doc_id")
         if did not in docs:
+            filename = meta.get("filename")
+            if not filename:
+                uploads_dir = Path("uploads")
+                matches = list(uploads_dir.glob(f"{did}.*")) if uploads_dir.exists() else []
+                filename = f"Untitled{matches[0].suffix}" if matches else "Untitled"
             docs[did] = {
                 "doc_id":      did,
                 "chunk_total": meta.get("chunk_total", 0),
+                "filename":    filename,
             }
 
     return list(docs.values())
@@ -119,6 +135,13 @@ def delete_document(doc_id: str) -> dict:
         raise ValueError(f"Document '{doc_id}' not found in the database.")
 
     _collection.delete(where={"doc_id": doc_id})
+
+    # Delete physical file from uploads/
+    from pathlib import Path
+    uploads_dir = Path("uploads")
+    if uploads_dir.exists():
+        for match in uploads_dir.glob(f"{doc_id}.*"):
+            match.unlink(missing_ok=True)
 
     return {
         "doc_id":          doc_id,
